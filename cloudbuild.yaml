@@ -1,0 +1,35 @@
+steps:
+  # 1. Build de la imagen con los argumentos correctos
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '--build-arg=OPENAI_API_KEY=${_OPENAI_API_KEY}'
+      - '--build-arg=OPENAI_ASSISTANT_ID=${_OPENAI_ASSISTANT_ID}'
+      - '--build-arg=DATABASE_URL=${_DATABASE_URL}'
+      - '--build-arg=NEXT_PUBLIC_APP_URL=${_NEXT_PUBLIC_APP_URL}'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/koa-demo:$COMMIT_SHA'
+      - '.'
+
+  # 2. Push a Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/koa-demo:$COMMIT_SHA']
+
+  # 3. Deploy a Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'koa-demo'
+      - '--image=gcr.io/$PROJECT_ID/koa-demo:$COMMIT_SHA'
+      - '--region=us-central1'
+      - '--platform=managed'
+      - '--allow-unauthenticated'
+
+# Esta sección corrige el error de tu última imagen
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+images:
+  - 'gcr.io/$PROJECT_ID/koa-demo:$COMMIT_SHA'
